@@ -22,6 +22,7 @@
       "in_list_view": 0
     },
     {
+      "columns": 3,
       "fieldname": "target_field",
       "fieldtype": "Select",
       "in_list_view": 1,
@@ -29,6 +30,7 @@
       "reqd": 1
     },
     {
+      "columns": 3,
       "fieldname": "value_type",
       "fieldtype": "Select",
       "in_list_view": 1,
@@ -37,6 +39,7 @@
       "reqd": 1
     },
     {
+      "columns": 4,
       "fieldname": "display_summary",
       "fieldtype": "Data",
       "in_list_view": 1,

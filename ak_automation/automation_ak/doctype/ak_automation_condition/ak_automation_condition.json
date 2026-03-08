@@ -22,6 +22,7 @@
       "default": "All"
     },
     {
+      "columns": 3,
       "fieldname": "field",
       "fieldtype": "Select",
       "in_list_view": 1,
@@ -29,6 +30,7 @@
       "reqd": 1
     },
     {
+      "columns": 3,
       "fieldname": "operator",
       "fieldtype": "Select",
       "in_list_view": 1,
@@ -41,6 +43,7 @@
       "fieldtype": "Column Break"
     },
     {
+      "columns": 4,
       "fieldname": "value",
       "fieldtype": "Small Text",
       "in_list_view": 1,
