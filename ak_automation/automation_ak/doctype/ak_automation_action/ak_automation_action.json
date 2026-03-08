@@ -6,7 +6,6 @@
   "field_order": [
     "action_type",
     "action_label",
-    "cb_action_top",
     "enabled",
     "sb_email",
     "email_from",
@@ -56,10 +55,6 @@
       "fieldtype": "Data",
       "in_list_view": 1,
       "label": "Action Label"
-    },
-    {
-      "fieldname": "cb_action_top",
-      "fieldtype": "Column Break"
     },
     {
       "columns": 2,

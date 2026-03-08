@@ -6,19 +6,6 @@ frappe.ui.form.on("AK Automation", {
 
 		// Hide the raw field_updates child table — managed inline in action rows
 		frm.set_df_property("sb_field_updates", "hidden", 1);
-
-		// Force grid tables to recalculate layout after render settles
-		setTimeout(() => {
-			["all_conditions", "any_conditions", "actions"].forEach((tbl) => {
-				let grid = frm.fields_dict[tbl] && frm.fields_dict[tbl].grid;
-				if (grid) grid.refresh();
-			});
-		}, 200);
-	},
-
-	onload(frm) {
-		// Ensure child table grids are visible even on brand-new documents
-		frm.set_df_property("sb_field_updates", "hidden", 1);
 	},
 
 	reference_doctype(frm) {
@@ -54,8 +41,12 @@ frappe.ui.form.on("AK Automation Condition", {
 // ── Action events ──
 frappe.ui.form.on("AK Automation Action", {
 	action_type(frm, cdt, cdn) {
-		frm.refresh_fields();
+		// depends_on handles section visibility automatically — no refresh needed
 		let row = locals[cdt][cdn];
+		let grid_row = frm.fields_dict.actions.grid.grid_rows_by_docname[cdn];
+		if (grid_row && grid_row.grid_form) {
+			grid_row.grid_form.layout.refresh_sections();
+		}
 		if (["Update Fields", "Field Formulas"].includes(row.action_type)) {
 			setTimeout(() => _render_field_updates_html(frm, cdt, cdn), 150);
 		}
@@ -64,7 +55,6 @@ frappe.ui.form.on("AK Automation Action", {
 	form_render(frm, cdt, cdn) {
 		let row = locals[cdt][cdn];
 		if (["Update Fields", "Field Formulas"].includes(row.action_type)) {
-			// Small delay to ensure the grid form is fully rendered
 			setTimeout(() => _render_field_updates_html(frm, cdt, cdn), 50);
 		}
 	},
