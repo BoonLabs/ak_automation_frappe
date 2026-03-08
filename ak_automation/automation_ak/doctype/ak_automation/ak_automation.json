@@ -25,11 +25,10 @@
     "actions",
     "sb_field_updates",
     "field_updates",
-    "sb_stats",
-    "last_executed",
-    "execution_count",
-    "cb_stats",
-    "last_error"
+    "sb_server_script",
+    "server_script",
+    "cb_server_script",
+    "server_script_modified"
   ],
   "fields": [
     {
@@ -161,40 +160,30 @@
     },
     {
       "collapsible": 1,
-      "fieldname": "sb_stats",
+      "fieldname": "sb_server_script",
       "fieldtype": "Section Break",
-      "label": "Execution Stats"
+      "label": "Linked Server Script"
     },
     {
-      "fieldname": "last_executed",
-      "fieldtype": "Datetime",
-      "label": "Last Executed",
-      "read_only": 1
+      "description": "Link to a Server Script that implements this automation's logic",
+      "fieldname": "server_script",
+      "fieldtype": "Link",
+      "label": "Server Script",
+      "options": "Server Script"
     },
     {
-      "default": "0",
-      "fieldname": "execution_count",
-      "fieldtype": "Int",
-      "label": "Execution Count",
-      "read_only": 1
-    },
-    {
-      "fieldname": "cb_stats",
+      "fieldname": "cb_server_script",
       "fieldtype": "Column Break"
     },
     {
-      "fieldname": "last_error",
-      "fieldtype": "Small Text",
-      "label": "Last Error",
+      "fetch_from": "server_script.modified",
+      "fieldname": "server_script_modified",
+      "fieldtype": "Datetime",
+      "label": "Script Last Modified",
       "read_only": 1
     }
   ],
-  "links": [
-    {
-      "link_doctype": "AK Automation Log",
-      "link_fieldname": "automation"
-    }
-  ],
+  "links": [],
   "modified": "2026-02-20 00:00:00",
   "modified_by": "Administrator",
   "module": "Automation AK",
@@ -216,7 +205,7 @@
     }
   ],
   "search_fields": "title,reference_doctype,trigger_type",
-  "sort_field": "modified",
+  "sort_field": "creation",
   "sort_order": "DESC",
   "title_field": "title",
   "track_changes": 1

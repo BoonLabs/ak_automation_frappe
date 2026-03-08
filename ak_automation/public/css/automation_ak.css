@@ -1,13 +1,5 @@
 /* ── AK Automation — Custom Styles ── */
 
-/* Status indicator colors in list views and forms */
-[data-doctype="AK Automation Log"] .list-row .indicator-pill[data-indicator="green"],
-.indicator-pill.green { --indicator-color: #00B894; }
-[data-doctype="AK Automation Log"] .list-row .indicator-pill[data-indicator="red"],
-.indicator-pill.red { --indicator-color: #E17055; }
-[data-doctype="AK Automation Log"] .list-row .indicator-pill[data-indicator="orange"],
-.indicator-pill.orange { --indicator-color: #FDCB6E; }
-
 /* Automation form — section styling */
 [data-doctype="AK Automation"] .section-head {
     font-weight: 600;
@@ -40,11 +32,6 @@
 [data-doctype="AK Automation"] .frappe-control[data-fieldname="actions"] .grid-form-heading {
     background: var(--bg-purple, #f3f0ff);
     border-left: 3px solid var(--purple-500, #6C5CE7);
-}
-
-/* Log status pills */
-[data-doctype="AK Automation Log"] .level-left .list-row--col .ellipsis .indicator-pill {
-    font-weight: 600;
 }
 
 /* Workspace shortcut card hover */

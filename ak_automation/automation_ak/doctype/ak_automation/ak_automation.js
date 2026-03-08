@@ -1,28 +1,5 @@
 frappe.ui.form.on("AK Automation", {
 	refresh(frm) {
-		if (!frm.is_new()) {
-			frm.add_custom_button(__("Test Automation"), function () {
-				frappe.call({
-					method: "ak_automation.api.automation.test_automation",
-					args: { automation_name: frm.doc.name },
-					freeze: true,
-					freeze_message: __("Testing..."),
-					callback: function (r) {
-						if (r.message) {
-							frappe.msgprint({
-								title: __("Test Result"),
-								message: `<strong>Document:</strong> ${r.message.document}<br>
-									<strong>Conditions Met:</strong> ${r.message.conditions_met ? "Yes" : "No"}<br>
-									<strong>Actions:</strong> ${r.message.actions_count}<br><br>
-									${r.message.message}`,
-								indicator: r.message.conditions_met ? "green" : "orange",
-							});
-						}
-					},
-				});
-			});
-		}
-
 		if (frm.doc.reference_doctype) {
 			_load_doctype_fields(frm);
 		}

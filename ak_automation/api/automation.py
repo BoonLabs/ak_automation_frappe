@@ -1,3 +1,9 @@
+"""API endpoints for AK Automation — visual/configuration only.
+
+These endpoints provide metadata for the UI (field lists, operators, options).
+No automation dispatching or execution occurs.
+"""
+
 import frappe
 
 
@@ -98,64 +104,8 @@ def _check_operators():
 
 
 @frappe.whitelist()
-def run_button_automation(automation_name, doctype, docname):
-	"""Execute a button-triggered (Macro) automation on a specific document."""
-	automation = frappe.get_doc("AK Automation", automation_name)
-
-	if not automation.enabled:
-		frappe.throw("This automation is disabled.")
-	if automation.trigger_type != "Macro (Button)":
-		frappe.throw("This automation is not a button/macro trigger.")
-
-	doc = frappe.get_doc(doctype, docname)
-	doc.check_permission("write")
-
-	from ak_automation.dispatcher.conditions import evaluate_conditions
-	if not evaluate_conditions(automation, doc):
-		return {"status": "skipped", "message": "Conditions not met."}
-
-	from ak_automation.dispatcher.actions import execute_action
-	results = []
-	for action_row in automation.actions:
-		if action_row.enabled:
-			result = execute_action(action_row, doc, automation)
-			results.append(result)
-
-	return {"status": "ok", "message": f"Automation '{automation.title}' executed successfully."}
-
-
-@frappe.whitelist()
-def test_automation(automation_name, docname=None):
-	"""Dry-run an automation to preview what would happen."""
-	automation = frappe.get_doc("AK Automation", automation_name)
-
-	if docname:
-		doc = frappe.get_doc(automation.reference_doctype, docname)
-	else:
-		latest = frappe.get_list(
-			automation.reference_doctype,
-			limit=1,
-			order_by="modified desc",
-			pluck="name",
-		)
-		if not latest:
-			frappe.throw(f"No documents found for {automation.reference_doctype}")
-		doc = frappe.get_doc(automation.reference_doctype, latest[0])
-
-	from ak_automation.dispatcher.conditions import evaluate_conditions
-	conditions_met = evaluate_conditions(automation, doc)
-
-	return {
-		"document": doc.name,
-		"conditions_met": conditions_met,
-		"actions_count": len([a for a in automation.actions if a.enabled]),
-		"message": "Conditions met — actions would execute." if conditions_met else "Conditions NOT met — automation would be skipped.",
-	}
-
-
-@frappe.whitelist()
 def get_button_automations(doctype):
-	"""Return all active button/macro automations for a DocType."""
+	"""Return all active button/macro automations for a DocType (visual listing only)."""
 	return frappe.get_list("AK Automation",
 		filters={
 			"reference_doctype": doctype,
@@ -164,24 +114,3 @@ def get_button_automations(doctype):
 		},
 		fields=["name", "title", "button_label"],
 	)
-
-
-@frappe.whitelist()
-def test_whatsapp_connection():
-	"""Test that the frappe_whatsapp integration is configured and active."""
-	if not frappe.db.exists("DocType", "WhatsApp Settings"):
-		return {"success": False, "error": "frappe_whatsapp app is not installed"}
-
-	try:
-		settings = frappe.get_single("WhatsApp Settings")
-		default_account = settings.default_outgoing_account
-		if not default_account:
-			return {"success": False, "error": "No default outgoing WhatsApp account configured"}
-
-		account = frappe.get_doc("WhatsApp Account", default_account)
-		if account.status != "Active":
-			return {"success": False, "error": f"WhatsApp account '{default_account}' is not active (status: {account.status})"}
-
-		return {"success": True, "account": default_account}
-	except Exception as e:
-		return {"success": False, "error": str(e)}

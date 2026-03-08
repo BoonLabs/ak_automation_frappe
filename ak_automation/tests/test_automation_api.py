@@ -1,4 +1,7 @@
-"""Tests for api/automation.py — whitelisted automation API endpoints."""
+"""Tests for api/automation.py — whitelisted automation API endpoints.
+
+This app is visual/configuration-only — no dispatcher or execution logic.
+"""
 
 from unittest.mock import patch, MagicMock
 
@@ -9,10 +12,7 @@ from ak_automation.api.automation import (
 	get_doctype_fields,
 	get_field_options,
 	get_operators_for_field,
-	run_button_automation,
-	test_automation,
 	get_button_automations,
-	test_whatsapp_connection,
 	_text_operators,
 	_numeric_operators,
 	_date_operators,
@@ -154,179 +154,3 @@ class TestGetButtonAutomations(UnitTestCase):
 		self.assertEqual(filters["reference_doctype"], "Sales Order")
 		self.assertEqual(filters["trigger_type"], "Macro (Button)")
 		self.assertEqual(filters["enabled"], 1)
-
-
-class TestRunButtonAutomation(UnitTestCase):
-	"""Tests for run_button_automation API."""
-
-	@patch("ak_automation.dispatcher.actions.execute_action")
-	@patch("ak_automation.dispatcher.conditions.evaluate_conditions", return_value=True)
-	@patch("ak_automation.api.automation.frappe.get_doc")
-	def test_executes_enabled_actions(self, mock_get_doc, mock_conditions, mock_execute):
-		action1 = frappe._dict({"enabled": 1, "action_type": "Update Fields"})
-		action2 = frappe._dict({"enabled": 0, "action_type": "Send Email"})
-		automation = frappe._dict({
-			"name": "AUTO-001",
-			"title": "Test Auto",
-			"enabled": 1,
-			"trigger_type": "Macro (Button)",
-			"actions": [action1, action2],
-		})
-		doc = MagicMock()
-		doc.check_permission = MagicMock()
-
-		mock_get_doc.side_effect = lambda *args: {
-			("AK Automation", "AUTO-001"): automation,
-			("ToDo", "TODO-001"): doc,
-		}.get(args, MagicMock())
-
-		result = run_button_automation("AUTO-001", "ToDo", "TODO-001")
-
-		self.assertEqual(result["status"], "ok")
-		# Only enabled action should be executed
-		mock_execute.assert_called_once_with(action1, doc, automation)
-
-	@patch("ak_automation.api.automation.frappe.get_doc")
-	def test_throws_if_automation_disabled(self, mock_get_doc):
-		automation = frappe._dict({
-			"enabled": 0,
-			"trigger_type": "Macro (Button)",
-		})
-		mock_get_doc.return_value = automation
-
-		with self.assertRaises(Exception):
-			run_button_automation("AUTO-001", "ToDo", "TODO-001")
-
-	@patch("ak_automation.api.automation.frappe.get_doc")
-	def test_throws_if_wrong_trigger_type(self, mock_get_doc):
-		automation = frappe._dict({
-			"enabled": 1,
-			"trigger_type": "On Create",
-		})
-		mock_get_doc.return_value = automation
-
-		with self.assertRaises(Exception):
-			run_button_automation("AUTO-001", "ToDo", "TODO-001")
-
-	@patch("ak_automation.dispatcher.conditions.evaluate_conditions", return_value=False)
-	@patch("ak_automation.api.automation.frappe.get_doc")
-	def test_skips_when_conditions_not_met(self, mock_get_doc, mock_conditions):
-		automation = frappe._dict({
-			"enabled": 1,
-			"trigger_type": "Macro (Button)",
-			"actions": [],
-		})
-		doc = MagicMock()
-		doc.check_permission = MagicMock()
-
-		mock_get_doc.side_effect = lambda *args: {
-			("AK Automation", "AUTO-001"): automation,
-			("ToDo", "TODO-001"): doc,
-		}.get(args, MagicMock())
-
-		result = run_button_automation("AUTO-001", "ToDo", "TODO-001")
-		self.assertEqual(result["status"], "skipped")
-
-
-class TestTestAutomation(UnitTestCase):
-	"""Tests for test_automation (dry-run) API."""
-
-	@patch("ak_automation.dispatcher.conditions.evaluate_conditions", return_value=True)
-	@patch("ak_automation.api.automation.frappe.get_doc")
-	def test_with_specific_document(self, mock_get_doc, mock_conditions):
-		automation = frappe._dict({
-			"name": "AUTO-001",
-			"reference_doctype": "ToDo",
-			"actions": [
-				frappe._dict({"enabled": 1}),
-				frappe._dict({"enabled": 0}),
-			],
-		})
-		doc = frappe._dict({"name": "TODO-001"})
-
-		mock_get_doc.side_effect = lambda *args: {
-			("AK Automation", "AUTO-001"): automation,
-			("ToDo", "TODO-001"): doc,
-		}.get(args, MagicMock())
-
-		result = test_automation("AUTO-001", docname="TODO-001")
-
-		self.assertEqual(result["document"], "TODO-001")
-		self.assertTrue(result["conditions_met"])
-		self.assertEqual(result["actions_count"], 1)
-
-	@patch("ak_automation.dispatcher.conditions.evaluate_conditions", return_value=False)
-	@patch("ak_automation.api.automation.frappe.get_list", return_value=["TODO-LATEST"])
-	@patch("ak_automation.api.automation.frappe.get_doc")
-	def test_uses_latest_document_when_no_docname(self, mock_get_doc, mock_get_list, mock_conditions):
-		automation = frappe._dict({
-			"name": "AUTO-001",
-			"reference_doctype": "ToDo",
-			"actions": [],
-		})
-		doc = frappe._dict({"name": "TODO-LATEST"})
-
-		mock_get_doc.side_effect = lambda *args: {
-			("AK Automation", "AUTO-001"): automation,
-			("ToDo", "TODO-LATEST"): doc,
-		}.get(args, MagicMock())
-
-		result = test_automation("AUTO-001")
-
-		self.assertFalse(result["conditions_met"])
-		self.assertIn("skipped", result["message"].lower())
-
-	@patch("ak_automation.api.automation.frappe.get_list", return_value=[])
-	@patch("ak_automation.api.automation.frappe.get_doc")
-	def test_throws_when_no_documents_exist(self, mock_get_doc, mock_get_list):
-		automation = frappe._dict({
-			"name": "AUTO-001",
-			"reference_doctype": "Nonexistent DocType",
-			"actions": [],
-		})
-		mock_get_doc.return_value = automation
-
-		with self.assertRaises(Exception):
-			test_automation("AUTO-001")
-
-
-class TestWhatsAppConnection(UnitTestCase):
-	"""Tests for test_whatsapp_connection API."""
-
-	@patch("ak_automation.api.automation.frappe.db.exists", return_value=False)
-	def test_returns_failure_when_app_not_installed(self, mock_exists):
-		result = test_whatsapp_connection()
-		self.assertFalse(result["success"])
-		self.assertIn("not installed", result["error"])
-
-	@patch("ak_automation.api.automation.frappe.get_doc")
-	@patch("ak_automation.api.automation.frappe.get_single")
-	@patch("ak_automation.api.automation.frappe.db.exists", return_value=True)
-	def test_returns_failure_when_no_default_account(self, mock_exists, mock_single, mock_get_doc):
-		mock_single.return_value = frappe._dict({"default_outgoing_account": ""})
-
-		result = test_whatsapp_connection()
-		self.assertFalse(result["success"])
-		self.assertIn("No default", result["error"])
-
-	@patch("ak_automation.api.automation.frappe.get_doc")
-	@patch("ak_automation.api.automation.frappe.get_single")
-	@patch("ak_automation.api.automation.frappe.db.exists", return_value=True)
-	def test_returns_success_with_active_account(self, mock_exists, mock_single, mock_get_doc):
-		mock_single.return_value = frappe._dict({"default_outgoing_account": "WA-001"})
-		mock_get_doc.return_value = frappe._dict({"status": "Active"})
-
-		result = test_whatsapp_connection()
-		self.assertTrue(result["success"])
-		self.assertEqual(result["account"], "WA-001")
-
-	@patch("ak_automation.api.automation.frappe.get_doc")
-	@patch("ak_automation.api.automation.frappe.get_single")
-	@patch("ak_automation.api.automation.frappe.db.exists", return_value=True)
-	def test_returns_failure_for_inactive_account(self, mock_exists, mock_single, mock_get_doc):
-		mock_single.return_value = frappe._dict({"default_outgoing_account": "WA-001"})
-		mock_get_doc.return_value = frappe._dict({"status": "Disconnected"})
-
-		result = test_whatsapp_connection()
-		self.assertFalse(result["success"])
-		self.assertIn("not active", result["error"])
